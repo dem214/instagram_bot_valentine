@@ -21,6 +21,6 @@
 
 ## Usage
 
-Don't forget to add a list of acconts in `acconts.txt` (new-line separated)
+Don't forget to add a list of acconts in `accounts.txt` (new-line separated)
 
 `python bot.py -u <username> -p <password>`
