@@ -8,10 +8,10 @@ session = InstaPy(
     headless_browser=False
 )
 
-def iter_all_followers(session, accounts):
+def iter_all_followers(session, accounts, amount="full"):
     followers = set()
     for account in accounts:
-        followers.update(session.grab_followers(username=account, amount='full'))
+        followers.update(session.grab_followers(username=account, amount=amount))
     for follower in followers:
         yield follower
 
@@ -36,6 +36,17 @@ with smart_run(session):
     session.set_skip_users(skip_private=True, private_percentage=100)
     # Eanble liking
     session.set_do_like(True, percentage=100)
+    # Enable story watching
+    session.set_do_story(enabled=True)
+    # Quota supervising
+    session.set_quota_supervisor(
+        enabled=True,
+        sleep_after=['likes_h', 'server_calls_d'],
+        sleepyhead=True,
+        stochastic_flow=True,
+        peak_likes_hourly=70,
+        peak_server_calls_daily=5000
+    )
 
-    for follower in iter_all_followers(session, iter_get_all_accounts()):
-        do_actions_with_user(session, follower)
+    followers = iter_all_followers(session, iter_get_all_accounts(), amount=100)
+    session.interact_by_users(followers, randomize=True)
