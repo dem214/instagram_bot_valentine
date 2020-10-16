@@ -37,7 +37,7 @@ with smart_run(session):
     # Eanble liking
     session.set_do_like(True, percentage=100)
     # Enable story watching
-    session.set_do_story(enabled=True)
+    session.set_do_story(enabled=True, percentage=100)
     # Quota supervising
     session.set_quota_supervisor(
         enabled=True,
@@ -49,4 +49,4 @@ with smart_run(session):
     )
 
     followers = iter_all_followers(session, iter_get_all_accounts(), amount=100)
-    session.interact_by_users(followers, randomize=True)
+    session.interact_by_users(list(followers), randomize=True)
