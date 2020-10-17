@@ -49,4 +49,4 @@ with smart_run(session):
     )
 
     followers = iter_all_followers(session, iter_get_all_accounts(), amount=100)
-    session.interact_by_users(list(followers), randomize=True)
+    session.interact_by_users(list(followers), randomize=True, amount=5)
