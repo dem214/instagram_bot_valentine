@@ -33,19 +33,19 @@ def iter_get_all_accounts():
 with smart_run(session):
     # settings
     # Skip private
-    session.set_skip_users(skip_private=True, private_percentage=100)
+    session.set_skip_users(skip_private=True, private_percentage=80)
     # Eanble liking
-    session.set_do_like(True, percentage=100)
+    session.set_do_like(True, percentage=50)
     # Enable story watching
-    session.set_do_story(enabled=True, percentage=100)
+    session.set_do_story(enabled=True, percentage=50)
     # Quota supervising
     session.set_quota_supervisor(
         enabled=True,
         sleep_after=['likes_h', 'server_calls_d'],
         sleepyhead=True,
         stochastic_flow=True,
-        peak_likes_hourly=70,
-        peak_server_calls_daily=5000
+        peak_likes_hourly=58,
+        peak_server_calls_daily=1405
     )
 
     followers = iter_all_followers(session, iter_get_all_accounts(), amount=100)
