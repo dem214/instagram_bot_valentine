@@ -35,18 +35,18 @@ with smart_run(session):
     # Skip private
     session.set_skip_users(skip_private=True, private_percentage=80)
     # Eanble liking
-    session.set_do_like(True, percentage=50)
+    session.set_do_like(True, percentage=70)
     # Enable story watching
-    session.set_do_story(enabled=True, percentage=50)
+    session.set_do_story(enabled=True, percentage=90)
     # Quota supervising
     session.set_quota_supervisor(
         enabled=True,
-        sleep_after=['likes_h', 'server_calls_d'],
+        sleep_after=['likes_h', 'likes_d'],
         sleepyhead=True,
         stochastic_flow=True,
         peak_likes_hourly=58,
-        peak_server_calls_daily=1405
+        peak_likes_daily=1405
     )
 
-    followers = iter_all_followers(session, iter_get_all_accounts(), amount=100)
+    followers = iter_all_followers(session, iter_get_all_accounts(), amount=260)
     session.interact_by_users(list(followers), randomize=True, amount=5)
