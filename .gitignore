@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Not import database of project
+accounts.sqlite3
+accounts.sqlite3-journal
