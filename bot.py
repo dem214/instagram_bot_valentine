@@ -1,3 +1,4 @@
+#! /usr/bin/python
 from random import randint
 
 from instapy import InstaPy, smart_run
@@ -13,7 +14,7 @@ def iter_all_followers(session, accounts, amount="full"):
     for account in accounts:
         followers.update(session.grab_followers(username=account, amount=amount))
     for follower in followers:
-        yield follower
+        yield Account(follower)
 
 def do_actions_with_user(session, username):
     # Enable and watch stories
@@ -28,6 +29,15 @@ def iter_get_all_accounts():
         for line in file.readlines():
             yield line.strip()
 
+class Account(str):
+    def __init__(self, username, is_checked=False):
+        self.username = username
+        self.is_checked = is_checked
+
+    __slots__ = ['username', 'is_checked']
+
+    def iteract(self):
+        
     
 
 with smart_run(session):
