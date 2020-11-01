@@ -1,6 +1,7 @@
 #! /usr/bin/python
 from random import randint, sample
 import os
+import time
 
 from instapy import InstaPy, smart_run
 from sqlalchemy import create_engine, Column, String, Boolean
@@ -51,12 +52,19 @@ class Account(Base):
     
     username = Column(String, primary_key=True)
     is_checked = Column(Boolean)
+    REST_TIME_AFTER_ITERACT_MIN = 35
+    REST_TIME_AFTER_ITERACT_MAX = 55
 
     def iteract(self, session):
         print(f"Iteracting with {self.username}!")
-        session.interact_by_users(self.username, amount=randint(1, 5))
+        self._method_of_iterraction(session)
         self.is_checked = True
         orm_session.commit()
+
+    def _method_of_iterraction(self, session):        
+        session.interact_by_users(self.username, amount=randint(1, 5))
+        self._rest_after_iteract()
+
 
     @staticmethod
     def saving_follovers_of_famous(session, famous, amount='full'):
@@ -83,6 +91,12 @@ class Account(Base):
             else:
                 resp = sample(all_unchecked, len(all_unchecked))
         return resp
+
+    def _rest_after_iteract(self):
+        rest_time = randint(self.REST_TIME_AFTER_ITERACT_MIN, self.REST_TIME_AFTER_ITERACT_MAX)
+        print("i'm little tyred, sleep {rest_time} seconds")
+        time.sleep(rest_time)
+        print("i'd rested, lets go")
 
     
 if __name__ == '__main__':
@@ -115,7 +129,7 @@ if __name__ == '__main__':
         print('saving accounts from famous')
         for famous in FamousAccount.iter_from_file_with_dbing():
             Account.saving_follovers_of_famous(session, famous)
-        print("start to iteract with amounts")
+        print("start to iteract with amount")
         while accounts := Account.get_random_unchecked_accounts_from_db(AMMOUNT_OF_ACCOUNTS):
             for account in accounts:
                 account.iteract(session)
