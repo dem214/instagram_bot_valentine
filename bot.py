@@ -11,8 +11,8 @@ from sqlalchemy import create_engine, Column, String, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
+import yaml
 
-ACCOUNTS_PATH = 'accounts.txt'
 DATABASE_NAME = 'accounts.sqlite3'
 EXPIRATION_DATE_OF_FAMOUS_ACCOUNT = timedelta(days=7)
 AMMOUNT_OF_ACCOUNTS = 260
@@ -23,6 +23,9 @@ Session = sessionmaker()
 Session.configure(bind=engine)
 orm_session = Session()
 Base = declarative_base()
+
+with open('config.yml', 'r') as f:
+    CONFIG = yaml.full_load(f)
 
 
 class FamousAccount(Base):
@@ -35,11 +38,9 @@ class FamousAccount(Base):
         return f"Famous account '{self.username}"
 
     @staticmethod
-    def iter_get_usernames_from_source(file=ACCOUNTS_PATH):
-        with open(file, 'r') as file:
-            for line in file.readlines():
-                username = line.strip()
-                yield username
+    def iter_get_usernames_from_source():
+        for username in CONFIG['accounts']:
+            yield username
 
     @staticmethod
     def create_with_dbing(username):
@@ -165,8 +166,8 @@ if __name__ == '__main__':
             sleep_after=['likes_h', 'likes_d'],
             sleepyhead=True,
             stochastic_flow=True,
-            peak_likes_hourly=58,
-            peak_likes_daily=1405
+            peak_likes_hourly=CONFIG['likes_hourly'],
+            peak_likes_daily=CONFIG['likes_daily']
         )
 
         usernames = FamousAccount.iter_get_usernames_from_source()

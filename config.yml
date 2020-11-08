@@ -1,0 +1,9 @@
+accounts: 
+# Put list of accounts usernames like
+# - account1
+# - account2
+  - qa_academy
+  - no.more.bugs.blog
+
+likes_hourly: 58
+likes_daily: 1405
