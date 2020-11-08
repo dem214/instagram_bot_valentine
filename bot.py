@@ -2,66 +2,90 @@
 from random import randint, sample
 import os
 import time
+import logging
+from datetime import datetime, timedelta
+import pathlib
 
 from instapy import InstaPy, smart_run
-from sqlalchemy import create_engine, Column, String, Boolean
+from sqlalchemy import create_engine, Column, String, Boolean, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 
 ACCOUNTS_PATH = 'accounts.txt'
 DATABASE_NAME = 'accounts.sqlite3'
+EXPIRATION_DATE_OF_FAMOUS_ACCOUNT = timedelta(days=7)
 AMMOUNT_OF_ACCOUNTS = 260
 
+# Database
 engine = create_engine(f'sqlite:///{DATABASE_NAME}')
 Session = sessionmaker()
 Session.configure(bind=engine)
 orm_session = Session()
-
 Base = declarative_base()
-
-def iter_all_followers(session, accounts, amount="full"):
-    followers = set()
-    for account in accounts:
-        followers.update(session.grab_followers(username=account, amount=amount))
-    for follower in followers:
-        yield Account(follower)
 
 
 class FamousAccount(Base):
     __tablename__ = 'famous_account'
 
     username = Column(String, primary_key=True)
+    date_of_adding = Column(DateTime)
+
+    def __str__(self):
+        return f"Famous account '{self.username}"
 
     @staticmethod
-    def iter_from_file_with_dbing(file=ACCOUNTS_PATH):
+    def iter_get_usernames_from_source(file=ACCOUNTS_PATH):
         with open(file, 'r') as file:
             for line in file.readlines():
                 username = line.strip()
-                try:
-                    famous = orm_session.query(FamousAccount).\
-                        filter(FamousAccount.username == username).one()
-                except NoResultFound:
-                    print(f"adding new famous account {username}")
-                    famous = FamousAccount(username=username)
-                    orm_session.add(famous)
-                yield famous
+                yield username
+
+    @staticmethod
+    def create_with_dbing(username):
+        try:
+            famous = orm_session.query(FamousAccount).\
+                filter(FamousAccount.username == username).one()
+            print(famous)
+        except NoResultFound:
+            session.logger.info(f"adding new famous account {username}")
+            famous = FamousAccount(
+                username=username,
+                date_of_adding=datetime.now() - 2 * EXPIRATION_DATE_OF_FAMOUS_ACCOUNT)
+            orm_session.add(famous)
+            print(famous)
+        finally:
+            return famous
+
+    def is_expired(self):
+        """
+        check if famous account is not expired.
+        """
+        session.logger.info(f"Try to check expiration of {self.username} -- {self.date_of_adding}")
+        session.logger.info(f"time for last connectiong is {datetime.now() - self.date_of_adding}")
+        return datetime.now() - self.date_of_adding > \
+            EXPIRATION_DATE_OF_FAMOUS_ACCOUNT
+
 
 class Account(Base):
     __tablename__ = 'accounts'
-    
+  
     username = Column(String, primary_key=True)
     is_checked = Column(Boolean)
+
     REST_TIME_AFTER_ITERACT_MIN = 35
     REST_TIME_AFTER_ITERACT_MAX = 55
 
+    def __str__(self):
+        return f"Account '{self.username}'"
+
     def iteract(self, session):
-        print(f"Iteracting with {self.username}!")
-        self._method_of_iterraction(session)
+        session.logger.info(f"Interacting with {self.username}!")
+        self._method_of_interraction(session)
         self.is_checked = True
         orm_session.commit()
 
-    def _method_of_iterraction(self, session):        
+    def _method_of_interraction(self, session):
         session.interact_by_users(self.username, amount=randint(1, 5))
         self._rest_after_iteract()
 
@@ -74,18 +98,21 @@ class Account(Base):
                     filter(Account.username == username).\
                     one()
             except NoResultFound:
-                print(f"Adding new account {username}")
+                session.logger.info(f"Adding new account {username}")
                 orm_session.add(Account(username=username, is_checked=False))
+        famous.date_of_adding = datetime.now()
+        orm_session.commit()
+        session.logger.info(f"Famous account {famous.username} date of upload updated to {famous.date_of_adding}")
 
     @staticmethod
     def get_random_unchecked_accounts_from_db(amount):
         all_unchecked = orm_session.query(Account).\
-            filter(Account.is_checked == False).\
+            filter(Account.is_checked==False).\
             all()
         try:
             resp = sample(all_unchecked, amount)
         except ValueError:
-            print('Not enough accounts in db')
+            session.logger.info('Not enough accounts in db')
             if len(all_unchecked) == 0:
                 resp = None
             else:
@@ -93,20 +120,36 @@ class Account(Base):
         return resp
 
     def _rest_after_iteract(self):
-        rest_time = randint(self.REST_TIME_AFTER_ITERACT_MIN, self.REST_TIME_AFTER_ITERACT_MAX)
-        print("i'm little tyred, sleep {rest_time} seconds")
+        rest_time = randint(
+            self.REST_TIME_AFTER_ITERACT_MIN, 
+            self.REST_TIME_AFTER_ITERACT_MAX)
+        session.logger.info(f"i'm little tyred, sleep {rest_time} seconds")
         time.sleep(rest_time)
         print("i'd rested, lets go")
 
-    
+   
 if __name__ == '__main__':
     # Check db or create
     if not os.path.exists(DATABASE_NAME):
         print("create db")
         Base.metadata.create_all(engine)
 
+    # Logging
+    log_dir = pathlib.Path('.') / 'logs'
+    # Creat log dir
+    if not log_dir.exists():
+        os.mkdir(log_dir)
+    fhandler = logging.FileHandler(
+        log_dir / '{:%Y-%m-%d}.log'.format(datetime.now())
+    )
+    lformatter = logging.Formatter(
+        '%(levelname)s [%(asctime)s] [%(name)s] - %(message)s'
+    )
+    fhandler.setFormatter(lformatter)
+
     session = InstaPy(
-        headless_browser=False
+        headless_browser=False,
+        log_handler=fhandler
     )
     with smart_run(session):
         # settings
@@ -126,12 +169,15 @@ if __name__ == '__main__':
             peak_likes_daily=1405
         )
 
-        print('saving accounts from famous')
-        for famous in FamousAccount.iter_from_file_with_dbing():
+        usernames = FamousAccount.iter_get_usernames_from_source()
+        famouses = map(FamousAccount.create_with_dbing, usernames)
+        expired_famouses = (famous for famous in famouses if famous.is_expired())
+        for famous in expired_famouses:
             Account.saving_follovers_of_famous(session, famous)
-        print("start to iteract with amount")
-        while accounts := Account.get_random_unchecked_accounts_from_db(AMMOUNT_OF_ACCOUNTS):
+        session.logger.info("Start to iteract with amount")
+        while accounts := Account.get_random_unchecked_accounts_from_db(
+                AMMOUNT_OF_ACCOUNTS):
             for account in accounts:
                 account.iteract(session)
-            print("ended with amount")
-        print("ended with all accounts in db")
+            session.logger.info("Ended with amount")
+        session.logger.info("Ended with all accounts in db")

@@ -1,1 +1,2 @@
 qa_academy
+no.more.bugs.blog
