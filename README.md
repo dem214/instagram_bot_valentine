@@ -21,6 +21,8 @@
 
 ## Usage
 
-Don't forget to add a list of acconts in `accounts.txt` (new-line separated)
+You can change basical configurations in `config.yml`. YAML powered.
+
+Don't forget to add a list of acconts in `accounts` key in `config.yml` file.
 
 `python bot.py -u <username> -p <password>`
